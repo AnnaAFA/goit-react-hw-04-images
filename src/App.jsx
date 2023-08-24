@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Wrapper } from './App.styled';
 import { SearchBar } from 'components/Searchbar/Searchbar';
 import { ImagesGallery } from './components/ImageGallery/ImageGallery';
@@ -16,20 +16,10 @@ export const App = () => {
   const [, setError] = useState('');
 
   useEffect(() => {
-    if (searchQuery) {
-      setImages([]);
-      setPage(1);
-      setStatus('idle');
-      if (searchQuery.trim() === '') {
-        Notiflix.Notify.warning('Write something!');
-      } else {
-        fetchImages(searchQuery, 1);
-      }
-    }
-    if (status === 'idle' && page && searchQuery) {
+    if (searchQuery.trim() !== '') {
       fetchImages(searchQuery, page);
     }
-  }, [page, searchQuery, status]);
+  }, [page, searchQuery]);
 
   const fetchImages = async (searchQuery, page) => {
     setStatus('pending');
@@ -40,25 +30,32 @@ export const App = () => {
       });
       if (hits.length === 0) {
         Notiflix.Notify.failure('Write a valid value!');
+        setImages([]);
       } else {
         setImages(prevImages => [...prevImages, ...hits]);
         setTotal(totalHits);
-        setStatus('resolved');
       }
     } catch (error) {
       setError(error.message);
-      setStatus('rejected');
+    } finally {
+      setStatus('resolved');
     }
   };
 
   const handleLoadMore = () => {
     setPage(prevPage => prevPage + 1);
-    setStatus('resolved');
-    fetchImages(searchQuery, page);
   };
 
-  const handleSearch = searchQuery => {
-    setSearchQuery(searchQuery);
+  const handleSearch = searchValue => {
+    if (searchValue.trim() === '') {
+      Notiflix.Notify.warning('Write something!');
+      setImages([]);
+      return;
+    } else if (searchValue !== searchQuery) {
+      setImages([]);
+      setPage(1);
+      setSearchQuery(searchValue);
+    }
   };
 
   const totalPage = Math.ceil(total / 12);
